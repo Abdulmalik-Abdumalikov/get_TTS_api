@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UzbekVoice – TTS & STT</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      color: #1e293b;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .subtitle {
+      color: #64748b;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    @media (max-width: 640px) {
+      .cards { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .card-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 6px;
+    }
+
+    .card-desc {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      resize: vertical;
+      min-height: 120px;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    textarea:focus { border-color: #6366f1; }
+
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      background: #fff;
+      margin-bottom: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    select:focus { border-color: #6366f1; }
+
+    .file-drop {
+      border: 2px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      color: #94a3b8;
+      font-size: 0.9rem;
+      transition: background 0.2s, border-color 0.2s;
+      margin-bottom: 16px;
+    }
+
+    .file-drop:hover, .file-drop.dragging {
+      background: #f1f5ff;
+      border-color: #6366f1;
+      color: #6366f1;
+    }
+
+    .file-drop input[type="file"] { display: none; }
+
+    .file-name {
+      font-size: 0.8rem;
+      color: #6366f1;
+      margin-top: 6px;
+      font-weight: 600;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 12px;
+    }
+
+    .btn:hover { background: #4f46e5; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { background: #a5b4fc; cursor: not-allowed; }
+
+    .result-box {
+      margin-top: 20px;
+      padding: 16px;
+      background: #f8fafc;
+      border-radius: 10px;
+      border: 1.5px solid #e2e8f0;
+      min-height: 60px;
+      display: none;
+    }
+
+    .result-box.visible { display: block; }
+
+    .result-box p {
+      font-size: 0.9rem;
+      color: #374151;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+
+    .result-box audio {
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .status {
+      font-size: 0.8rem;
+      margin-top: 10px;
+      min-height: 20px;
+    }
+
+    .status.loading { color: #6366f1; }
+    .status.success { color: #16a34a; }
+    .status.error   { color: #dc2626; }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #c7d2fe;
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <h1>🎙️ UzbekVoice</h1>
+  <p class="subtitle">Matnni nutqqa va nutqni matnga aylantiring</p>
+
+  <div class="cards">
+
+    <!-- TTS Card -->
+    <div class="card">
+      <div class="card-title">✍️ Matndan Nutq (TTS)</div>
+      <div class="card-desc">Matn yozing — audio yaratib beradi</div>
+
+      <label for="tts-model">Model</label>
+      <select id="tts-model">
+        <option value="lola">Lola (ayol ovozi)</option>
+        <option value="sardor">Sardor (erkak ovozi)</option>
+      </select>
+
+      <label for="tts-text">Matn</label>
+      <textarea id="tts-text" placeholder="Bu yerga o'zbek matnini yozing..."></textarea>
+
+      <button class="btn" id="tts-btn" onclick="doTts()">🔊 Audio Yaratish</button>
+
+      <div class="status" id="tts-status"></div>
+
+      <div class="result-box" id="tts-result">
+        <audio id="tts-audio" controls></audio>
+      </div>
+    </div>
+
+    <!-- STT Card -->
+    <div class="card">
+      <div class="card-title">🎧 Nutqdan Matn (STT)</div>
+      <div class="card-desc">Audio fayl yuklang — matnga aylantiradi</div>
+
+      <label for="stt-language">Til</label>
+      <select id="stt-language">
+        <option value="uz">O'zbek (uz)</option>
+        <option value="ru">Rus (ru)</option>
+        <option value="en">Ingliz (en)</option>
+      </select>
+
+      <label>Audio Fayl</label>
+      <div class="file-drop" id="file-drop" onclick="document.getElementById('stt-file').click()"
+           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+        <input type="file" id="stt-file" accept="audio/*" onchange="onFileChange(event)" />
+        <span id="drop-text">📂 Bosing yoki faylni bu yerga tashlang</span>
+        <div class="file-name" id="file-name"></div>
+      </div>
+
+      <button class="btn" id="stt-btn" onclick="doStt()">📝 Matnga O'tkazish</button>
+
+      <div class="status" id="stt-status"></div>
+
+      <div class="result-box" id="stt-result">
+        <p id="stt-text-output"></p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── TTS ──────────────────────────────────────────────
+    async function doTts() {
+      const text  = document.getElementById('tts-text').value.trim();
+      const model = document.getElementById('tts-model').value;
+      const btn   = document.getElementById('tts-btn');
+      const status = document.getElementById('tts-status');
+      const resultBox = document.getElementById('tts-result');
+      const audio = document.getElementById('tts-audio');
+
+      if (!text) { setStatus('tts', 'error', '⚠️ Matn bo\'sh!'); return; }
+
+      btn.disabled = true;
+      resultBox.classList.remove('visible');
+      setStatus('tts', 'loading', 'Audio yaratilmoqda...');
+
+      try {
+        const res = await fetch('/api/v1/speech/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, model, blocking: true })
+        });
+
+        const data = await res.json();
+
+        if (data.success && data.audioUrl) {
+          audio.src = data.audioUrl;
+          resultBox.classList.add('visible');
+          setStatus('tts', 'success', '✅ Audio tayyor!');
+          audio.play().catch(() => {});
+        } else {
+          setStatus('tts', 'error', '❌ Audio URL olinmadi. Qaytadan urinib ko\'ring.');
+        }
+      } catch (e) {
+        setStatus('tts', 'error', '❌ Xato: ' + e.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // ── STT ──────────────────────────────────────────────
+    function onFileChange(e) {
+      const file = e.target.files[0];
+      if (file) {
+        document.getElementById('file-name').textContent = '📎 ' + file.name;
+        document.getElementById('drop-text').textContent = 'Fayl tanlandi';
+      }
+    }
+
+    function onDragOver(e) {
+      e.preventDefault();
+      document.getElementById('file-drop').classList.add('dragging');
+    }
+
+    function onDragLeave() {
+      document.getElementById('file-drop').classList.remove('dragging');
+    }
+
+    function onDrop(e) {
+      e.preventDefault();
+      document.getElementById('file-drop').classList.remove('dragging');
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        document.getElementById('stt-file').files = dt.files;
+        document.getElementById('file-name').textContent = '📎 ' + file.name;
+        document.getElementById('drop-text').textContent = 'Fayl tanlandi';
+      }
+    }
+
+    async function doStt() {
+      const fileInput = document.getElementById('stt-file');
+      const language  = document.getElementById('stt-language').value;
+      const btn       = document.getElementById('stt-btn');
+      const status    = document.getElementById('stt-status');
+      const resultBox = document.getElementById('stt-result');
+      const output    = document.getElementById('stt-text-output');
+
+      if (!fileInput.files.length) { setStatus('stt', 'error', '⚠️ Fayl tanlanmagan!'); return; }
+
+      btn.disabled = true;
+      resultBox.classList.remove('visible');
+      setStatus('stt', 'loading', 'Audio tahlil qilinmoqda...');
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      formData.append('language', language);
+      formData.append('model', 'general');
+      formData.append('return_offsets', 'false');
+      formData.append('blocking', 'true');
+
+      try {
+        const res = await fetch('/api/v1/speech/stt', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (data.text !== undefined && data.text !== null) {
+          output.textContent = data.text || '(Matn aniqlanmadi)';
+          resultBox.classList.add('visible');
+          setStatus('stt', 'success', '✅ Matn tayyor!');
+        } else if (data.error) {
+          setStatus('stt', 'error', '❌ ' + data.error);
+        } else {
+          setStatus('stt', 'error', '❌ Natija olinmadi.');
+        }
+      } catch (e) {
+        setStatus('stt', 'error', '❌ Xato: ' + e.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // ── helpers ──────────────────────────────────────────
+    function setStatus(type, cls, msg) {
+      const el = document.getElementById(type + '-status');
+      el.className = 'status ' + cls;
+      el.innerHTML = cls === 'loading'
+        ? '<span class="spinner"></span>' + msg
+        : msg;
+    }
+  </script>
+</body>
+</html>
