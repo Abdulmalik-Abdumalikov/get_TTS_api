@@ -84,7 +84,7 @@ public class UzbekVoiceApiClient {
     /**
      * Text to Speech - Matni nutqqa aylantirish (TTS)
      */
-    public JsonObject textToSpeechWithModel(String text, String model, boolean blocking) {
+    public JsonObject textToSpeechWithModel(String text, String model, boolean blocking, String webhookUrl) {
         String url = apiUrl + "/tts";
 
         System.out.println("========== UZBEKVOICE TTS DEBUG ==========");
@@ -102,7 +102,7 @@ public class UzbekVoiceApiClient {
             jsonBody.addProperty("text", text);
             jsonBody.addProperty("model", model);
             jsonBody.addProperty("blocking", blocking);
-            jsonBody.addProperty("webhook_notification_url", "");
+            jsonBody.addProperty("webhook_notification_url", webhookUrl != null ? webhookUrl : "");
 
             System.out.println("📤 Request Body: " + jsonBody.toString());
 

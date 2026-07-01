@@ -41,19 +41,29 @@ public class SpeechService {
             }
 
             // Vaqtinchalik fayl saqla
-            String tempFilePath = System.getProperty("java.io.tmpdir") + "/" + System.currentTimeMillis() + ".mp3";
+            String originalName = audioFile.getOriginalFilename();
+            String ext = (originalName != null && originalName.contains("."))
+                    ? originalName.substring(originalName.lastIndexOf('.'))
+                    : ".audio";
+            String tempFilePath = System.getProperty("java.io.tmpdir") + "/" + System.currentTimeMillis() + ext;
             File tempFile = new File(tempFilePath);
             audioFile.transferTo(tempFile);
 
             System.out.println("💾 Temp file saved: " + tempFilePath);
             System.out.println("📂 Temp file exists: " + tempFile.exists());
 
-            // API ga yuborish
-            System.out.println("🔌 Calling Uzbekvoice API...");
-            JsonObject apiResponse = uzbekVoiceApiClient.speechToText(
-                    tempFilePath, language, model, returnOffsets, blocking);
-
-            System.out.println("📨 API Response: " + apiResponse.toString());
+            JsonObject apiResponse;
+            try {
+                // API ga yuborish
+                System.out.println("🔌 Calling Uzbekvoice API...");
+                apiResponse = uzbekVoiceApiClient.speechToText(
+                        tempFilePath, language, model, returnOffsets, blocking);
+                System.out.println("📨 API Response: " + apiResponse.toString());
+            } finally {
+                if (tempFile.exists()) {
+                    tempFile.delete();
+                }
+            }
 
             // Javobni qayta ishlash
             SpeechRecord record = new SpeechRecord();
@@ -111,10 +121,14 @@ public class SpeechService {
             String model = ttsRequest.getModel() != null ? ttsRequest.getModel() : "lola";
             boolean blocking = ttsRequest.isBlocking();
 
+            String webhookUrl = ttsRequest.getWebhook_notification_url() != null
+                    ? ttsRequest.getWebhook_notification_url() : "";
+
             JsonObject apiResponse = uzbekVoiceApiClient.textToSpeechWithModel(
                     ttsRequest.getText(),
                     model,
-                    blocking
+                    blocking,
+                    webhookUrl
             );
 
             System.out.println("📨 Initial API Response: " + apiResponse.toString());
